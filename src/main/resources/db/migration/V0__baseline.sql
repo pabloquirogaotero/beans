@@ -1,0 +1,1 @@
+-- Intentionally empty. No schema defined yet.
