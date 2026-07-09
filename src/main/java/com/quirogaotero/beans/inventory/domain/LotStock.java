@@ -12,6 +12,9 @@ public class LotStock {
     this.id = Objects.requireNonNull(id, "Id must not be null.");
     this.onHand = Objects.requireNonNull(onHand, "OnHand must not be null.");
     this.reserved = Objects.requireNonNull(reserved, "Reserved must not be null.");
+
+    if (this.reserved.isGreaterThan(this.onHand))
+      throw new IllegalStateException("Invariant violated: reserved > onHand for " + id);
   }
 
   public static LotStock newEmptyLotStock(LotStockId id) {
