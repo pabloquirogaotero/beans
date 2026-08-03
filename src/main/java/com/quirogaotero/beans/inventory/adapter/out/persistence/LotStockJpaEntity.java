@@ -3,7 +3,7 @@ package com.quirogaotero.beans.inventory.adapter.out.persistence;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "lot_stock")
+@Table(name = "lot_stocks")
 public class LotStockJpaEntity {
 
   @EmbeddedId

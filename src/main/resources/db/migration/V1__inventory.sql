@@ -1,7 +1,7 @@
 -- Inventory context.
 
 CREATE TABLE locations (
-  id        CHAR(10)          PRIMARY KEY,
+  id        VARCHAR(10)       PRIMARY KEY,
   type      VARCHAR(9)        NOT NULL,
   latitude  DOUBLE PRECISION  NOT NULL,
   longitude DOUBLE PRECISION  NOT NULL,
@@ -10,20 +10,20 @@ CREATE TABLE locations (
 );
 
 CREATE TABLE lots (
-  id          UUID      PRIMARY KEY,
-  sku_id      VARCHAR(18)  NOT NULL,
-  code        CHAR(9)   UNIQUE NOT NULL,
-  best_before DATE      NOT NULL
+  id          UUID          PRIMARY KEY,
+  sku_id      VARCHAR(18)   NOT NULL,
+  code        VARCHAR(9)    UNIQUE NOT NULL,
+  best_before DATE          NOT NULL
 );
 
 CREATE INDEX index_lots_sku_id ON lots (sku_id);
 
 CREATE TABLE lot_stocks (
-  lot_id      UUID   REFERENCES lots,
-  location_id CHAR(10)  REFERENCES locations,
-  on_hand     INTEGER   NOT NULL,
-  reserved    INTEGER   NOT NULL  DEFAULT 0,
-  version     BIGINT    NOT NULL  DEFAULT 0,
+  lot_id      UUID        REFERENCES lots,
+  location_id VARCHAR(10) REFERENCES locations,
+  on_hand     INTEGER     NOT NULL,
+  reserved    INTEGER     NOT NULL  DEFAULT 0,
+  version     BIGINT      NOT NULL  DEFAULT 0,
 
   PRIMARY KEY (lot_id, location_id),
   CONSTRAINT check_non_negative_lot_stock_quantities CHECK (on_hand >= 0 AND reserved >= 0),
@@ -33,8 +33,8 @@ CREATE TABLE lot_stocks (
 CREATE TABLE reservations (
   id          UUID        PRIMARY KEY,
   checkout_id UUID        NOT NULL,
-  lot_id      CHAR(9)     NOT NULL,
-  location_id CHAR(10)    NOT NULL,
+  lot_id      UUID        NOT NULL,
+  location_id VARCHAR(10) NOT NULL,
   quantity    INTEGER     NOT NULL,
   expires_at  TIMESTAMPTZ NOT NULL,
   status      VARCHAR(9)  NOT NULL,
