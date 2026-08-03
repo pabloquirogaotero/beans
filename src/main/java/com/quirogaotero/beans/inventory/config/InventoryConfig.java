@@ -3,6 +3,7 @@ package com.quirogaotero.beans.inventory.config;
 import com.quirogaotero.beans.inventory.application.port.in.ReserveForCheckoutUseCase;
 import com.quirogaotero.beans.inventory.application.port.out.*;
 import com.quirogaotero.beans.inventory.application.service.ReserveForCheckoutService;
+import com.quirogaotero.beans.inventory.application.service.RetryingReserveForCheckout;
 import com.quirogaotero.beans.inventory.domain.AllocationStrategy;
 import com.quirogaotero.beans.inventory.domain.ConsolidatedAllocationStrategy;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,16 +28,14 @@ public class InventoryConfig {
 
   @Bean
   ReserveForCheckoutUseCase reserveForCheckoutUseCase(
-          CandidateFinder candidateFinder,
-          LotStockRepository lotStocks,
-          ReservationRepository reservations,
-          AllocationStrategy allocationStrategy,
-          Clock clock,
+          CandidateFinder candidateFinder, LotStockRepository lotStocks,
+          ReservationRepository reservations, AllocationStrategy allocationStrategy, Clock clock,
           @Value("${beans.checkout.hold-duration:PT15M}") Duration holdDuration,
           @Value("${beans.checkout.min-shelf-life-days:30}") int minShelfLifeDays) {
 
-    return new ReserveForCheckoutService(candidateFinder, lotStocks, reservations,
+    var core = new ReserveForCheckoutService(candidateFinder, lotStocks, reservations,
             allocationStrategy, clock, holdDuration, minShelfLifeDays);
+    return new RetryingReserveForCheckout(core, 5, 20);
   }
 
 }
