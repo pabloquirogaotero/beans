@@ -1,7 +1,9 @@
 package com.quirogaotero.beans.inventory.config;
 
+import com.quirogaotero.beans.inventory.application.port.in.ExpireReservationsUseCase;
 import com.quirogaotero.beans.inventory.application.port.in.ReserveForCheckoutUseCase;
 import com.quirogaotero.beans.inventory.application.port.out.*;
+import com.quirogaotero.beans.inventory.application.service.ExpireReservationsService;
 import com.quirogaotero.beans.inventory.application.service.ReserveForCheckoutService;
 import com.quirogaotero.beans.inventory.application.service.RetryingReserveForCheckout;
 import com.quirogaotero.beans.inventory.domain.AllocationStrategy;
@@ -41,6 +43,12 @@ public class InventoryConfig {
   @Primary
   ReserveForCheckoutUseCase reserveForCheckoutUseCase(ReserveForCheckoutService core) {
     return new RetryingReserveForCheckout(core, 5, 20);
+  }
+
+  @Bean
+  ExpireReservationsUseCase expireReservationsUseCase(
+          ReservationRepository reservations, LotStockRepository lotStocks, Clock clock) {
+    return new ExpireReservationsService(reservations, lotStocks, clock);
   }
 
 }
