@@ -27,7 +27,7 @@ public class ReserveForCheckoutServiceTest {
     Lot lot = new Lot(LotId.newLotId(), new SkuId("COF-COLHU-WBN-250"), new LotCode("L00000001"),
             LocalDate.parse(bestBefore));
     LotStockId id = new LotStockId(new LocationId("WRH-OUR-01"), lot.getId());
-    lotStocks.seed(new LotStock(id, Quantity.of(available), Quantity.of(0)));
+    lotStocks.seed(new LotStock(id, Quantity.of(available), Quantity.of(0), 0L));
     return new Candidate(new LocationId("WRH-OUR-01"), locationType, close, lot, Quantity.of(available));
   }
 
