@@ -1,6 +1,7 @@
 package com.quirogaotero.beans.inventory.application.service;
 
 import com.quirogaotero.beans.inventory.application.port.in.*;
+import com.quirogaotero.beans.inventory.domain.InsufficientStockException;
 import org.springframework.dao.OptimisticLockingFailureException;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,10 +25,11 @@ public class RetryingReserveForCheckout implements ReserveForCheckoutUseCase {
       try {
         return delegate.reserveForCheckout(command);
       } catch (OptimisticLockingFailureException lostRace) {
-        if (attempt == maxAttempts) {
+        if (attempt == maxAttempts)
           return ReservationResult.newFailedReservation("Could not secure stock under contention");
-        }
         backoffWithJitter(attempt);
+      } catch (InsufficientStockException soldOut) {
+        return ReservationResult.newFailedReservation("Insufficient stock");
       }
     }
     return ReservationResult.newFailedReservation("Could not secure stock under contention");
