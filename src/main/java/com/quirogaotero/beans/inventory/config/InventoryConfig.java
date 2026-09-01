@@ -9,6 +9,7 @@ import com.quirogaotero.beans.inventory.domain.ConsolidatedAllocationStrategy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -27,14 +28,18 @@ public class InventoryConfig {
   }
 
   @Bean
-  ReserveForCheckoutUseCase reserveForCheckoutUseCase(
+  ReserveForCheckoutService reserveForCheckoutCore(
           CandidateFinder candidateFinder, LotStockRepository lotStocks,
           ReservationRepository reservations, AllocationStrategy allocationStrategy, Clock clock,
           @Value("${beans.checkout.hold-duration:PT15M}") Duration holdDuration,
           @Value("${beans.checkout.min-shelf-life-days:30}") int minShelfLifeDays) {
-
-    var core = new ReserveForCheckoutService(candidateFinder, lotStocks, reservations,
+    return new ReserveForCheckoutService(candidateFinder, lotStocks, reservations,
             allocationStrategy, clock, holdDuration, minShelfLifeDays);
+  }
+
+  @Bean
+  @Primary
+  ReserveForCheckoutUseCase reserveForCheckoutUseCase(ReserveForCheckoutService core) {
     return new RetryingReserveForCheckout(core, 5, 20);
   }
 
