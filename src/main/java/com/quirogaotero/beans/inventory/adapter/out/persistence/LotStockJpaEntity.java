@@ -21,10 +21,11 @@ public class LotStockJpaEntity {
 
   protected LotStockJpaEntity() { }
 
-  public LotStockJpaEntity(LotStockKey id, int onHand, int reserved) {
+  public LotStockJpaEntity(LotStockKey id, int onHand, int reserved, long version) {
     this.id = id;
     this.onHand = onHand;
     this.reserved = reserved;
+    this.version = version;
   }
 
   public LotStockKey getId() { return id; }

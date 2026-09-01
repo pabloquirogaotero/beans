@@ -22,14 +22,8 @@ public class LotStockRepositoryAdapter implements LotStockRepository {
 
   @Override
   public void save(LotStock lotStock) {
-    LotStockKey key = LotStockMapper.toKey(lotStock.getId());
-    jpa.findById(key).ifPresentOrElse(
-            existing -> {
-              LotStockMapper.applyTo(lotStock, existing);
-              jpa.save(existing);
-            },
-            () -> jpa.save(LotStockMapper.toEntity(lotStock))
-    );
+    LotStockJpaEntity entity = LotStockMapper.toEntity(lotStock);
+    jpa.save(entity);
   }
 
 }

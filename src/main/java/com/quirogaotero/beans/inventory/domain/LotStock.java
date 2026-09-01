@@ -7,6 +7,18 @@ public class LotStock {
   private final LotStockId id;
   private Quantity onHand;
   private Quantity reserved;
+  private final long version;
+
+  public LotStock(LotStockId id, Quantity onHand, Quantity reserved, long version) {
+    this.id = Objects.requireNonNull(id, "Id must not be null.");
+    this.onHand = Objects.requireNonNull(onHand, "OnHand must not be null.");
+    this.reserved = Objects.requireNonNull(reserved, "Reserved must not be null.");
+
+    if (this.reserved.isGreaterThan(this.onHand))
+      throw new IllegalStateException("Invariant violated: reserved > onHand for " + id);
+
+    this.version = version;
+  }
 
   public LotStock(LotStockId id, Quantity onHand, Quantity reserved) {
     this.id = Objects.requireNonNull(id, "Id must not be null.");
@@ -15,10 +27,16 @@ public class LotStock {
 
     if (this.reserved.isGreaterThan(this.onHand))
       throw new IllegalStateException("Invariant violated: reserved > onHand for " + id);
+
+    this.version = 0L;
+  }
+
+  public static LotStock newLotStock(LotStockId id, Quantity onHand, Quantity reserved) {
+    return new LotStock(id, onHand, reserved, 0L);
   }
 
   public static LotStock newEmptyLotStock(LotStockId id) {
-    return new LotStock(id, Quantity.ZERO, Quantity.ZERO);
+    return new LotStock(id, Quantity.ZERO, Quantity.ZERO, 0L);
   }
 
   public Quantity getAvailable() {
@@ -41,5 +59,6 @@ public class LotStock {
   public LotStockId getId() { return this.id; }
   public Quantity getOnHand() { return this.onHand; }
   public Quantity getReserved() { return this.reserved; }
+  public Long getVersion() { return this.version; }
 
 }

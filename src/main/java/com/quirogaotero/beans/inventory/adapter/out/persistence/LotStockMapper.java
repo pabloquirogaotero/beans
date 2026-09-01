@@ -10,14 +10,16 @@ public final class LotStockMapper {
     return new LotStock(
             toDomainId(entity.getId()),
             Quantity.of(entity.getOnHand()),
-            Quantity.of(entity.getReserved()));
+            Quantity.of(entity.getReserved()),
+            entity.getVersion());
   }
 
   public static LotStockJpaEntity toEntity(LotStock lotStock) {
     return new LotStockJpaEntity(
             toKey(lotStock.getId()),
             lotStock.getOnHand().value(),
-            lotStock.getReserved().value());
+            lotStock.getReserved().value(),
+            lotStock.getVersion());
   }
 
   public static void applyTo(LotStock lotStock, LotStockJpaEntity entity) {
