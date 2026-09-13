@@ -12,4 +12,6 @@ public interface ReservationJpaRepository
 
   List<ReservationJpaEntity> findByStatusAndExpiresAtBefore(ReservationStatus status, Instant now);
 
+  List<ReservationJpaEntity> findByCheckoutId(UUID checkoutId);
+
 }
