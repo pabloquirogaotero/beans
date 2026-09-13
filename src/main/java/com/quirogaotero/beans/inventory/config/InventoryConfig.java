@@ -1,8 +1,10 @@
 package com.quirogaotero.beans.inventory.config;
 
+import com.quirogaotero.beans.inventory.application.port.in.ConfirmReservationsUseCase;
 import com.quirogaotero.beans.inventory.application.port.in.ExpireReservationsUseCase;
 import com.quirogaotero.beans.inventory.application.port.in.ReserveForCheckoutUseCase;
 import com.quirogaotero.beans.inventory.application.port.out.*;
+import com.quirogaotero.beans.inventory.application.service.ConfirmReservationsService;
 import com.quirogaotero.beans.inventory.application.service.ExpireReservationsService;
 import com.quirogaotero.beans.inventory.application.service.ReserveForCheckoutService;
 import com.quirogaotero.beans.inventory.application.service.RetryingReserveForCheckout;
@@ -49,6 +51,11 @@ public class InventoryConfig {
   ExpireReservationsUseCase expireReservationsUseCase(
           ReservationRepository reservations, LotStockRepository lotStocks, Clock clock) {
     return new ExpireReservationsService(reservations, lotStocks, clock);
+  }
+
+  @Bean
+  ConfirmReservationsUseCase confirmReservationsUseCase(ReservationRepository reservations, Clock clock) {
+    return new ConfirmReservationsService(reservations, clock);
   }
 
 }
