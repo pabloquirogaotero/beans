@@ -1,6 +1,7 @@
-package com.quirogaotero.beans.ordering.application.port.out;
+package com.quirogaotero.beans.ordering.application;
 
 import com.quirogaotero.beans.inventory.domain.CheckoutId;
+import com.quirogaotero.beans.ordering.application.port.out.CheckoutRepository;
 import com.quirogaotero.beans.ordering.domain.Checkout;
 
 import java.util.HashMap;
