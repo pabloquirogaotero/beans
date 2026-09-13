@@ -1,6 +1,7 @@
 package com.quirogaotero.beans.inventory.adapter.out.persistence;
 
 import com.quirogaotero.beans.inventory.application.port.out.ReservationRepository;
+import com.quirogaotero.beans.inventory.domain.CheckoutId;
 import com.quirogaotero.beans.inventory.domain.Reservation;
 import com.quirogaotero.beans.inventory.domain.ReservationId;
 import com.quirogaotero.beans.inventory.domain.ReservationStatus;
@@ -36,6 +37,12 @@ public class ReservationRepositoryAdapter implements ReservationRepository {
   @Override
   public Optional<Reservation> findById(ReservationId id) {
     return jpa.findById(id.value()).map(ReservationMapper::toDomain);
+  }
+
+  @Override
+  public List<Reservation> findByCheckoutId(CheckoutId checkoutId) {
+    return jpa.findByCheckoutId(checkoutId.value())
+            .stream().map(ReservationMapper::toDomain).toList();
   }
 
 }

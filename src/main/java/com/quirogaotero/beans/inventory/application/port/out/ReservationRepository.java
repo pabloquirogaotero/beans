@@ -1,5 +1,6 @@
 package com.quirogaotero.beans.inventory.application.port.out;
 
+import com.quirogaotero.beans.inventory.domain.CheckoutId;
 import com.quirogaotero.beans.inventory.domain.Reservation;
 import com.quirogaotero.beans.inventory.domain.ReservationId;
 
@@ -14,4 +15,7 @@ public interface ReservationRepository {
   List<Reservation> findExpired(Instant now);
 
   Optional<Reservation> findById(ReservationId id);
+
+  List<Reservation> findByCheckoutId(CheckoutId checkoutId);
+
 }

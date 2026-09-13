@@ -1,5 +1,6 @@
 package com.quirogaotero.beans.inventory.application.port.out;
 
+import com.quirogaotero.beans.inventory.domain.CheckoutId;
 import com.quirogaotero.beans.inventory.domain.Reservation;
 import com.quirogaotero.beans.inventory.domain.ReservationId;
 import com.quirogaotero.beans.inventory.domain.ReservationStatus;
@@ -26,6 +27,11 @@ public class InMemoryReservationRepository implements ReservationRepository {
   @Override
   public Optional<Reservation> findById(ReservationId id) {
     return saved.stream().filter(r -> r.getId().equals(id)).findFirst();
+  }
+
+  @Override
+  public List<Reservation> findByCheckoutId(CheckoutId checkoutId) {
+    return saved.stream().filter(r -> r.getCheckoutId().equals(checkoutId)).toList();
   }
 
 }
