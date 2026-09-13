@@ -38,6 +38,9 @@ public class PayCheckoutService {
         Checkout checkout = checkouts.findById(checkoutId)
                 .orElseThrow(() -> new CheckoutNotFoundException(checkoutId));
 
+        if (checkout.getStatus() != CheckoutStatus.STARTED)
+            throw new CheckoutNotPayableException(checkoutId, checkout.getStatus());
+
         // 2. Confirm the reservations FIRST — if they expired, we can't fulfil, so we don't charge.
         try {
             confirmReservations.confirmReservations(checkoutId);

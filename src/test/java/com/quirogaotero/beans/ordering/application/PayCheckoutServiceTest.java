@@ -96,7 +96,7 @@ class PayCheckoutServiceTest {
         var svc = service(confirmThatSucceeds(), paymentApproves());
         svc.pay(checkout.getId(), Money.euros(2400));
 
-        assertThrows(IllegalStateException.class,
+        assertThrows(CheckoutNotPayableException.class,
                 () -> svc.pay(checkout.getId(), Money.euros(2400)));
     }
 
