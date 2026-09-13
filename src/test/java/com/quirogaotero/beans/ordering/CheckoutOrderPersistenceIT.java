@@ -32,7 +32,7 @@ class CheckoutOrderPersistenceIT {
         var loaded = checkouts.findById(checkout.getId()).orElseThrow();
         assertEquals(CheckoutStatus.STARTED, loaded.getStatus());
         assertEquals(1, loaded.getLines().size());
-        assertEquals("COF-COLHU-WBN-250", loaded.getLines().get(0).sku());
+        assertEquals("COF-COLHU-WBN-250", loaded.getLines().getFirst().sku());
     }
 
     @Test
@@ -43,7 +43,7 @@ class CheckoutOrderPersistenceIT {
 
         var loaded = orders.findById(order.getId()).orElseThrow();
         assertEquals(OrderStatus.CONFIRMED, loaded.getStatus());
-        assertEquals(3, loaded.getLines().get(0).quantity());
+        assertEquals(3, loaded.getLines().getFirst().quantity());
     }
 
 }

@@ -1,6 +1,7 @@
 package com.quirogaotero.beans.ordering.adapter.in.web;
 
 import com.quirogaotero.beans.ordering.application.CheckoutNotFoundException;
+import com.quirogaotero.beans.ordering.application.CheckoutNotPayableException;
 import com.quirogaotero.beans.ordering.application.PaymentDeclinedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -23,6 +24,11 @@ public class OrderingExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     ProblemDetail handleConflict(IllegalStateException ex) {
         // e.g. paying an already-paid checkout
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(CheckoutNotPayableException.class)
+    ProblemDetail handleNotPayable(CheckoutNotPayableException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
