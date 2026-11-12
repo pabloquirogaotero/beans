@@ -4,6 +4,7 @@ import com.quirogaotero.beans.inventory.application.port.in.ConfirmReservationsU
 import com.quirogaotero.beans.inventory.application.port.in.ReservationsNotConfirmableException;
 import com.quirogaotero.beans.inventory.domain.CheckoutId;
 import com.quirogaotero.beans.ordering.application.port.out.CheckoutRepository;
+import com.quirogaotero.beans.ordering.application.port.out.OrderOutbox;
 import com.quirogaotero.beans.ordering.application.port.out.OrderRepository;
 import com.quirogaotero.beans.ordering.application.port.out.PaymentPort;
 import com.quirogaotero.beans.ordering.application.port.out.PaymentResult;
@@ -18,15 +19,17 @@ public class PayCheckoutService {
 
     private final CheckoutRepository checkouts;
     private final OrderRepository orders;
+    private final OrderOutbox outbox;
     private final ConfirmReservationsUseCase confirmReservations;
     private final PaymentPort payment;
     private final Clock clock;
 
-    public PayCheckoutService(CheckoutRepository checkouts, OrderRepository orders,
+    public PayCheckoutService(CheckoutRepository checkouts, OrderRepository orders, OrderOutbox outbox,
                               ConfirmReservationsUseCase confirmReservations,
                               PaymentPort payment, Clock clock) {
         this.checkouts = checkouts;
         this.orders = orders;
+        this.outbox = outbox;
         this.confirmReservations = confirmReservations;
         this.payment = payment;
         this.clock = clock;
@@ -59,7 +62,11 @@ public class PayCheckoutService {
         Order order = Order.place(checkoutId, checkout.getLines(), clock.instant());
         orders.save(order);
 
-        // 5. Mark the checkout paid (guards against double payment).
+        // 5. Record the event in the outbox, in this same transaction: the order and the news
+        //    of it commit or roll back together, so fulfilment can never miss or invent an order.
+        outbox.append(OrderPlaced.from(order));
+
+        // 6. Mark the checkout paid (guards against double payment).
         checkout.markPaid();
         checkouts.save(checkout);
 
