@@ -8,6 +8,7 @@ import com.quirogaotero.beans.ordering.domain.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,8 +29,13 @@ class PayCheckoutServiceTest {
         return checkoutId -> { throw new ReservationsNotConfirmableException(checkoutId); };
     }
 
+    private final List<Money> charged = new ArrayList<>();
+
     private PaymentPort paymentApproves() {
-        return (checkoutId, amount) -> PaymentResult.approved("FAKE-REF");
+        return (checkoutId, amount) -> {
+            charged.add(amount);
+            return PaymentResult.approved("FAKE-REF");
+        };
     }
     private PaymentPort paymentDeclines() {
         return (checkoutId, amount) -> PaymentResult.declined("insufficient funds");
@@ -40,7 +46,7 @@ class PayCheckoutServiceTest {
     }
 
     private Checkout seededStartedCheckout() {
-        Checkout checkout = Checkout.start(lines, clock.instant());
+        Checkout checkout = Checkout.start(lines, Money.euros(2500), clock.instant());
         checkouts.save(checkout);
         return checkout;
     }
@@ -50,10 +56,11 @@ class PayCheckoutServiceTest {
         Checkout checkout = seededStartedCheckout();
 
         PayCheckoutResult result = service(confirmThatSucceeds(), paymentApproves())
-                .pay(checkout.getId(), Money.euros(2400));
+                .pay(checkout.getId());
 
         assertTrue(result.paid());
         assertNotNull(result.orderId());
+        assertEquals(Money.euros(2500), result.charged());
         // an order was stored
         assertTrue(orders.findById(result.orderId()).isPresent());
         // the checkout is now PAID
@@ -62,11 +69,21 @@ class PayCheckoutServiceTest {
     }
 
     @Test
+    void charges_the_total_the_checkout_was_priced_at() {
+        Checkout checkout = seededStartedCheckout();
+
+        PayCheckoutResult result = service(confirmThatSucceeds(), paymentApproves()).pay(checkout.getId());
+
+        assertEquals(List.of(checkout.getTotal()), charged);
+        assertEquals(checkout.getTotal(), orders.findById(result.orderId()).orElseThrow().getTotal());
+    }
+
+    @Test
     void records_one_order_placed_event_for_the_new_order() {
         Checkout checkout = seededStartedCheckout();
 
         PayCheckoutResult result = service(confirmThatSucceeds(), paymentApproves())
-                .pay(checkout.getId(), Money.euros(2400));
+                .pay(checkout.getId());
 
         assertEquals(1, outbox.events.size());
         OrderPlaced event = outbox.events.getFirst();
@@ -78,12 +95,12 @@ class PayCheckoutServiceTest {
     @Test
     void records_no_event_when_no_order_is_created() {
         Checkout expired = seededStartedCheckout();
-        service(confirmThatFails(), paymentApproves()).pay(expired.getId(), Money.euros(2400));
+        service(confirmThatFails(), paymentApproves()).pay(expired.getId());
 
         Checkout declined = seededStartedCheckout();
         assertThrows(PaymentDeclinedException.class,
                 () -> service(confirmThatSucceeds(), paymentDeclines())
-                        .pay(declined.getId(), Money.euros(2400)));
+                        .pay(declined.getId()));
 
         assertTrue(outbox.events.isEmpty());
     }
@@ -93,7 +110,7 @@ class PayCheckoutServiceTest {
         Checkout checkout = seededStartedCheckout();
 
         PayCheckoutResult result = service(confirmThatFails(), paymentApproves())
-                .pay(checkout.getId(), Money.euros(2400));
+                .pay(checkout.getId());
 
         assertFalse(result.paid());
         assertEquals("Reservation expired", result.reason());
@@ -108,24 +125,24 @@ class PayCheckoutServiceTest {
 
         assertThrows(PaymentDeclinedException.class,
                 () -> service(confirmThatSucceeds(), paymentDeclines())
-                        .pay(checkout.getId(), Money.euros(2400)));
+                        .pay(checkout.getId()));
     }
 
     @Test
     void throws_when_checkout_does_not_exist() {
         assertThrows(CheckoutNotFoundException.class,
                 () -> service(confirmThatSucceeds(), paymentApproves())
-                        .pay(CheckoutId.newCheckoutId(), Money.euros(2400)));
+                        .pay(CheckoutId.newCheckoutId()));
     }
 
     @Test
     void cannot_pay_the_same_checkout_twice() {
         Checkout checkout = seededStartedCheckout();
         var svc = service(confirmThatSucceeds(), paymentApproves());
-        svc.pay(checkout.getId(), Money.euros(2400));
+        svc.pay(checkout.getId());
 
         assertThrows(CheckoutNotPayableException.class,
-                () -> svc.pay(checkout.getId(), Money.euros(2400)));
+                () -> svc.pay(checkout.getId()));
     }
 
 }

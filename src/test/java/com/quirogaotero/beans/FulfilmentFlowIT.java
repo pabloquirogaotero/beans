@@ -11,7 +11,6 @@ import com.quirogaotero.beans.ordering.application.PayCheckoutResult;
 import com.quirogaotero.beans.ordering.application.PayCheckoutService;
 import com.quirogaotero.beans.ordering.application.StartCheckoutCommand;
 import com.quirogaotero.beans.ordering.application.StartCheckoutService;
-import com.quirogaotero.beans.ordering.domain.Money;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.BeforeEach;
@@ -115,7 +114,7 @@ class FulfilmentFlowIT {
                 List.of(new StartCheckoutCommand.Line(sku.value(), quantity))));
         assertTrue(checkout.result().reserved());
 
-        PayCheckoutResult paid = payCheckout.pay(checkout.checkoutId(), Money.euros(1200));
+        PayCheckoutResult paid = payCheckout.pay(checkout.checkoutId());
         assertTrue(paid.paid());
         return paid.orderId().value();
     }

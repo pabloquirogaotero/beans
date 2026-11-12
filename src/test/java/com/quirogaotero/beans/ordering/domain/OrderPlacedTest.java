@@ -11,7 +11,7 @@ class OrderPlacedTest {
 
     private final Instant placedAt = Instant.parse("2026-07-01T10:00:00Z");
     private final Order order = Order.place(CheckoutId.newCheckoutId(),
-            List.of(new OrderLine("COF-COLHU-WBN-250", 2)), placedAt);
+            List.of(new OrderLine("COF-COLHU-WBN-250", 2)), Money.euros(2500), placedAt);
 
     @Test
     void describes_the_order_it_was_raised_for() {

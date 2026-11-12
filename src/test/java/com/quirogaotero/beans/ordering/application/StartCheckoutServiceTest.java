@@ -4,12 +4,15 @@ import com.quirogaotero.beans.inventory.application.port.in.ReservationResult;
 import com.quirogaotero.beans.inventory.application.port.in.ReserveForCheckoutUseCase;
 import com.quirogaotero.beans.inventory.domain.CheckoutId;
 import com.quirogaotero.beans.inventory.domain.ReservationId;
+import com.quirogaotero.beans.ordering.application.port.out.PriceList;
 import com.quirogaotero.beans.ordering.domain.CheckoutStatus;
+import com.quirogaotero.beans.ordering.domain.Money;
 import org.junit.jupiter.api.Test;
 
 import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,8 +32,11 @@ class StartCheckoutServiceTest {
         return cmd -> ReservationResult.newFailedReservation("Insufficient stock");
     }
 
+    private final PriceList priceList = sku -> sku.equals("COF-COLHU-WBN-250")
+            ? Optional.of(Money.euros(1250)) : Optional.empty();
+
     private StartCheckoutService service(ReserveForCheckoutUseCase reserve) {
-        return new StartCheckoutService(reserve, checkouts, clock);
+        return new StartCheckoutService(reserve, checkouts, priceList, clock);
     }
 
     @Test
@@ -41,6 +47,29 @@ class StartCheckoutServiceTest {
         var stored = checkouts.findById(outcome.checkoutId()).orElseThrow();
         assertEquals(CheckoutStatus.STARTED, stored.getStatus());
         assertEquals(2, stored.getLines().getFirst().quantity());
+    }
+
+    @Test
+    void prices_the_checkout_from_the_price_list() {
+        CheckoutOutcome outcome = service(reserveThatSucceeds()).startCheckout(command);
+
+        assertEquals(Money.euros(2500), outcome.total());
+        assertEquals(Money.euros(2500), checkouts.findById(outcome.checkoutId()).orElseThrow().getTotal());
+    }
+
+    @Test
+    void refuses_an_unknown_product_without_reserving_anything() {
+        var reserveCalls = new ArrayList<CheckoutId>();
+        ReserveForCheckoutUseCase recording = cmd -> {
+            reserveCalls.add(cmd.checkoutId());
+            return reserveThatSucceeds().reserveForCheckout(cmd);
+        };
+        var unknown = new StartCheckoutCommand(42.34, -7.86, List.of(new StartCheckoutCommand.Line("NOT-SOLD", 1)));
+
+        assertThrows(UnknownProductException.class, () -> service(recording).startCheckout(unknown));
+
+        assertTrue(reserveCalls.isEmpty());
+        assertTrue(checkouts.store.isEmpty());
     }
 
     @Test

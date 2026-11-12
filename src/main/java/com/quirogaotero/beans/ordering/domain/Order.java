@@ -11,12 +11,14 @@ public class Order {
     private final OrderId id;
     private final CheckoutId checkoutId;
     private final List<OrderLine> lines;
+    private final Money total;
     private OrderStatus status;
     private final Instant placedAt;
 
-    public Order(OrderId id, CheckoutId checkoutId, List<OrderLine> lines,
+    public Order(OrderId id, CheckoutId checkoutId, List<OrderLine> lines, Money total,
                  OrderStatus status, Instant placedAt) {
         this.id = Objects.requireNonNull(id, "id");
+        this.total = Objects.requireNonNull(total, "total");
         this.checkoutId = Objects.requireNonNull(checkoutId, "checkoutId");
         this.status = Objects.requireNonNull(status, "status");
         this.placedAt = Objects.requireNonNull(placedAt, "placedAt");
@@ -26,8 +28,8 @@ public class Order {
         this.lines = List.copyOf(lines);
     }
 
-    public static Order place(CheckoutId checkoutId, List<OrderLine> lines, Instant placedAt) {
-        return new Order(OrderId.newOrderId(), checkoutId, lines, OrderStatus.CONFIRMED, placedAt);
+    public static Order place(CheckoutId checkoutId, List<OrderLine> lines, Money total, Instant placedAt) {
+        return new Order(OrderId.newOrderId(), checkoutId, lines, total, OrderStatus.CONFIRMED, placedAt);
     }
 
     public void markFulfilled() {
@@ -39,6 +41,7 @@ public class Order {
     public OrderId getId()          { return id; }
     public CheckoutId getCheckoutId() { return checkoutId; }
     public List<OrderLine> getLines() { return lines; }
+    public Money getTotal()         { return total; }
     public OrderStatus getStatus()  { return status; }
     public Instant getPlacedAt()    { return placedAt; }
 
