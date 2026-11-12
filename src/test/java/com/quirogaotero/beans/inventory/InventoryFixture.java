@@ -46,6 +46,11 @@ public class InventoryFixture {
     return new LotStockId(location, lotId);
   }
 
+  public LotCode lotCodeOf(LotStockId lotStockId) {
+    return new LotCode(jdbc.queryForObject("SELECT code FROM lots WHERE id = ?", String.class,
+            lotStockId.lotId().value()));
+  }
+
   private static String random(int length) {
     return UUID.randomUUID().toString().replace("-", "").substring(0, length).toUpperCase();
   }
