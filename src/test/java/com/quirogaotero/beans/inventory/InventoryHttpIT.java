@@ -10,7 +10,6 @@ import com.quirogaotero.beans.ordering.application.PayCheckoutResult;
 import com.quirogaotero.beans.ordering.application.PayCheckoutService;
 import com.quirogaotero.beans.ordering.application.StartCheckoutCommand;
 import com.quirogaotero.beans.ordering.application.StartCheckoutService;
-import com.quirogaotero.beans.ordering.domain.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,7 +108,7 @@ class InventoryHttpIT {
     }
 
     private UUID payForUnits(int quantity) {
-        PayCheckoutResult paid = payCheckout.pay(startCheckoutFor(quantity).checkoutId(), Money.euros(1200));
+        PayCheckoutResult paid = payCheckout.pay(startCheckoutFor(quantity).checkoutId());
         assertTrue(paid.paid());
         return paid.orderId().value();
     }

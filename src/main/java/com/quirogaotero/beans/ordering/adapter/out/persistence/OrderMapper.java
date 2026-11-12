@@ -12,14 +12,15 @@ public final class OrderMapper {
         List<OrderLine> lines = e.getLines().stream()
                 .map(l -> new OrderLine(l.sku(), l.quantity())).toList();
         return new Order(new OrderId(e.getId()), new CheckoutId(e.getCheckoutId()),
-                lines, OrderStatus.valueOf(e.getStatus()), e.getPlacedAt());
+                lines, new Money(e.getTotalInCents(), e.getCurrency()),
+                OrderStatus.valueOf(e.getStatus()), e.getPlacedAt());
     }
 
     public static OrderJpaEntity toEntity(Order o) {
         List<LineJson> lines = o.getLines().stream()
                 .map(l -> new LineJson(l.sku(), l.quantity())).toList();
         return new OrderJpaEntity(o.getId().value(), o.getCheckoutId().value(),
-                o.getStatus().name(), lines, o.getPlacedAt());
+                o.getStatus().name(), lines, o.getTotal().amountInCents(), o.getTotal().currency(), o.getPlacedAt());
     }
 
 }

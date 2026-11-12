@@ -13,7 +13,7 @@ class OrderTest {
 
     @Test
     void a_placed_order_starts_confirmed() {
-        var order = Order.place(checkout, lines, Instant.now());
+        var order = Order.place(checkout, lines, Money.euros(2500), Instant.now());
         assertEquals(OrderStatus.CONFIRMED, order.getStatus());
         assertEquals(1, order.getLines().size());
     }
@@ -21,26 +21,26 @@ class OrderTest {
     @Test
     void an_order_must_have_at_least_one_line() {
         assertThrows(IllegalArgumentException.class,
-            () -> Order.place(checkout, List.of(), Instant.now()));
+            () -> Order.place(checkout, List.of(), Money.euros(2500), Instant.now()));
     }
 
     @Test
     void confirmed_order_can_be_fulfilled() {
-        var order = Order.place(checkout, lines, Instant.now());
+        var order = Order.place(checkout, lines, Money.euros(2500), Instant.now());
         order.markFulfilled();
         assertEquals(OrderStatus.FULFILLED, order.getStatus());
     }
 
     @Test
     void cannot_fulfil_an_already_fulfilled_order() {
-        var order = Order.place(checkout, lines, Instant.now());
+        var order = Order.place(checkout, lines, Money.euros(2500), Instant.now());
         order.markFulfilled();
         assertThrows(IllegalStateException.class, order::markFulfilled);
     }
 
     @Test
     void order_lines_are_immutable() {
-        var order = Order.place(checkout, lines, Instant.now());
+        var order = Order.place(checkout, lines, Money.euros(2500), Instant.now());
         assertThrows(UnsupportedOperationException.class,
             () -> order.getLines().add(new OrderLine("X", 1)));
     }

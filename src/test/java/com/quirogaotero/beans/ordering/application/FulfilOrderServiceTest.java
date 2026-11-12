@@ -18,7 +18,7 @@ class FulfilOrderServiceTest {
 
     private Order placedOrder() {
         Order order = Order.place(CheckoutId.newCheckoutId(),
-                List.of(new OrderLine("COF-COLHU-WBN-250", 2)), Instant.parse("2026-07-01T10:00:00Z"));
+                List.of(new OrderLine("COF-COLHU-WBN-250", 2)), Money.euros(2500), Instant.parse("2026-07-01T10:00:00Z"));
         orders.save(order);
         return order;
     }

@@ -36,7 +36,7 @@ public class PayCheckoutService {
     }
 
     @Transactional
-    public PayCheckoutResult pay(CheckoutId checkoutId, Money amount) {
+    public PayCheckoutResult pay(CheckoutId checkoutId) {
         // 1. Load the checkout; it must exist and still be payable.
         Checkout checkout = checkouts.findById(checkoutId)
                 .orElseThrow(() -> new CheckoutNotFoundException(checkoutId));
@@ -51,15 +51,16 @@ public class PayCheckoutService {
             return PayCheckoutResult.reservationExpired();
         }
 
-        // 3. Charge (simulated). A decline is a normal business outcome, not an exception.
-        PaymentResult paymentResult = payment.charge(checkoutId, amount);
+        // 3. Charge the total fixed when the checkout started (simulated). A decline is a normal
+        //    business outcome, not an exception.
+        PaymentResult paymentResult = payment.charge(checkoutId, checkout.getTotal());
         if (!paymentResult.approved()) {
             // The transaction rolls back the confirmation via the exception below.
             throw new PaymentDeclinedException(checkoutId, paymentResult.declineReason());
         }
 
         // 4. Create the order from the checkout's lines (Ordering owns them — no need to ask Inventory).
-        Order order = Order.place(checkoutId, checkout.getLines(), clock.instant());
+        Order order = Order.place(checkoutId, checkout.getLines(), checkout.getTotal(), clock.instant());
         orders.save(order);
 
         // 5. Record the event in the outbox, in this same transaction: the order and the news
@@ -70,7 +71,7 @@ public class PayCheckoutService {
         checkout.markPaid();
         checkouts.save(checkout);
 
-        return PayCheckoutResult.paid(order.getId(), paymentResult.reference());
+        return PayCheckoutResult.paid(order.getId(), paymentResult.reference(), checkout.getTotal());
     }
 
 }

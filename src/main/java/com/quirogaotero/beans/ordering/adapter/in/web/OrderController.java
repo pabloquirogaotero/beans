@@ -20,7 +20,7 @@ public class OrderController {
         Order order = getOrder.getOrder(new OrderId(orderId));
         return new OrderResponse(order.getId().value(), order.getCheckoutId().value(), order.getStatus().name(),
                 order.getLines().stream().map(l -> new OrderResponse.Line(l.sku(), l.quantity())).toList(),
-                order.getPlacedAt());
+                order.getTotal().amountInCents(), order.getTotal().currency(), order.getPlacedAt());
     }
 
 }

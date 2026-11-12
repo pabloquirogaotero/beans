@@ -92,6 +92,7 @@ class CheckoutHttpIT {
         assertEquals(200, paid.statusCode());
         String orderId = JsonPath.read(paid.body(), "$.orderId");
         assertNotNull(orderId);
+        assertEquals(2000, JsonPath.<Integer>read(paid.body(), "$.chargedInCents"), "Charged the checkout total");
 
         assertEquals(409, pay(checkoutId).statusCode());
 
@@ -100,6 +101,7 @@ class CheckoutHttpIT {
         assertEquals(checkoutId, JsonPath.read(order.body(), "$.checkoutId"));
         assertEquals(sku.value(), JsonPath.read(order.body(), "$.lines[0].sku"));
         assertEquals(2, JsonPath.<Integer>read(order.body(), "$.lines[0].quantity"));
+        assertEquals(2000, JsonPath.<Integer>read(order.body(), "$.totalInCents"));
 
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM outbox_events WHERE type = 'OrderPlaced' AND message_key = ?",
                 Integer.class, orderId), "One order, one OrderPlaced event");
@@ -148,9 +150,10 @@ class CheckoutHttpIT {
     }
 
     private HttpResponse<String> pay(String checkoutId) throws Exception {
-        return post("/api/checkout/" + checkoutId + "/pay", """
-                {"amountInCents": 1200, "currency": "EUR"}
-                """);
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/checkout/" + checkoutId + "/pay"))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> get(String path) throws Exception {
