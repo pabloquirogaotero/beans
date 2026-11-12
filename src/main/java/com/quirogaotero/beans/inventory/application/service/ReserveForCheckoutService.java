@@ -6,6 +6,7 @@ import com.quirogaotero.beans.inventory.application.port.in.ReserveForCheckoutUs
 import com.quirogaotero.beans.inventory.application.port.out.CandidateFinder;
 import com.quirogaotero.beans.inventory.application.port.out.LotStockRepository;
 import com.quirogaotero.beans.inventory.application.port.out.ReservationRepository;
+import com.quirogaotero.beans.inventory.application.port.out.StockLedger;
 import com.quirogaotero.beans.inventory.domain.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,17 +22,20 @@ public class ReserveForCheckoutService implements ReserveForCheckoutUseCase {
   private final CandidateFinder candidateFinder;
   private final LotStockRepository lotStocks;
   private final ReservationRepository reservations;
+  private final StockLedger ledger;
   private final AllocationStrategy allocationStrategy;
   private final Clock clock;
   private final Duration holdDuration;
   private final int minShelfLifeDays;
 
   public ReserveForCheckoutService(CandidateFinder candidateFinder, LotStockRepository lotStocks,
-                                   ReservationRepository reservations, AllocationStrategy allocationStrategy,
+                                   ReservationRepository reservations, StockLedger ledger,
+                                   AllocationStrategy allocationStrategy,
                                    Clock clock, Duration holdDuration, int minShelfLifeDays) {
     this.candidateFinder = candidateFinder;
     this.lotStocks = lotStocks;
     this.reservations = reservations;
+    this.ledger = ledger;
     this.allocationStrategy = allocationStrategy;
     this.clock = clock;
     this.holdDuration = holdDuration;
@@ -60,17 +64,19 @@ public class ReserveForCheckoutService implements ReserveForCheckoutUseCase {
       return ReservationResult.newFailedReservation("No warehouse can fulfil the order.");
 
     // 4. Reserve each LotStock and store the reservations.
-    Instant expiresAt = clock.instant().plus(holdDuration);
+    Instant now = clock.instant();
+    Instant expiresAt = now.plus(holdDuration);
     List<ReservationId> ids = new ArrayList<>();
     for (LotAllocation allocation : plan.get().allocations()) {
       LotStock lotStock = lotStocks.find(allocation.lotStockId())
               .orElseThrow(() -> new IllegalStateException(
                       "Allocated LotStock not found: " + allocation.lotStockId()));
-      lotStock.reserve(allocation.quantity()); // Throws and rolls back the transaction if there is no sufficient stock.
+      StockMovement movement = lotStock.reserve(allocation.quantity()); // Throws and rolls back the transaction if there is no sufficient stock.
       Reservation reservation = Reservation.newActiveReservation(
               command.checkoutId(), allocation.lotStockId(), allocation.quantity(), expiresAt);
       lotStocks.save(lotStock);
       reservations.save(reservation);
+      ledger.record(StockLedgerEntry.forCheckout(movement, command.checkoutId(), now));
       ids.add(reservation.getId());
     }
 

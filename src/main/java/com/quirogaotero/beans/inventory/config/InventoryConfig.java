@@ -39,10 +39,10 @@ public class InventoryConfig {
   @Bean
   ReserveForCheckoutService reserveForCheckoutCore(
           CandidateFinder candidateFinder, LotStockRepository lotStocks,
-          ReservationRepository reservations, AllocationStrategy allocationStrategy, Clock clock,
+          ReservationRepository reservations, StockLedger ledger, AllocationStrategy allocationStrategy, Clock clock,
           @Value("${beans.checkout.hold-duration:PT15M}") Duration holdDuration,
           @Value("${beans.checkout.min-shelf-life-days:30}") int minShelfLifeDays) {
-    return new ReserveForCheckoutService(candidateFinder, lotStocks, reservations,
+    return new ReserveForCheckoutService(candidateFinder, lotStocks, reservations, ledger,
             allocationStrategy, clock, holdDuration, minShelfLifeDays);
   }
 
@@ -54,8 +54,8 @@ public class InventoryConfig {
 
   @Bean
   ExpireReservationsUseCase expireReservationsUseCase(
-          ReservationRepository reservations, LotStockRepository lotStocks, Clock clock) {
-    return new ExpireReservationsService(reservations, lotStocks, clock);
+          ReservationRepository reservations, LotStockRepository lotStocks, StockLedger ledger, Clock clock) {
+    return new ExpireReservationsService(reservations, lotStocks, ledger, clock);
   }
 
   @Bean
@@ -65,8 +65,9 @@ public class InventoryConfig {
 
   @Bean
   PickForOrderUseCase pickForOrderUseCase(ReservationRepository reservations, LotStockRepository lotStocks,
-                                          ProcessedEvents processedEvents, InventoryOutbox outbox, Clock clock) {
-    return new PickForOrderService(reservations, lotStocks, processedEvents, outbox, clock);
+                                          StockLedger ledger, ProcessedEvents processedEvents,
+                                          InventoryOutbox outbox, Clock clock) {
+    return new PickForOrderService(reservations, lotStocks, ledger, processedEvents, outbox, clock);
   }
 
   @Bean

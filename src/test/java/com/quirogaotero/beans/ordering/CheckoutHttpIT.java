@@ -91,6 +91,13 @@ class CheckoutHttpIT {
         assertNotNull(orderId);
 
         assertEquals(409, pay(checkoutId).statusCode());
+
+        HttpResponse<String> order = get("/api/orders/" + orderId);
+        assertEquals(200, order.statusCode());
+        assertEquals(checkoutId, JsonPath.read(order.body(), "$.checkoutId"));
+        assertEquals(sku.value(), JsonPath.read(order.body(), "$.lines[0].sku"));
+        assertEquals(2, JsonPath.<Integer>read(order.body(), "$.lines[0].quantity"));
+
         assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM outbox_events WHERE type = 'OrderPlaced' AND message_key = ?",
                 Integer.class, orderId), "One order, one OrderPlaced event");
     }
@@ -105,6 +112,11 @@ class CheckoutHttpIT {
 
         assertEquals(409, response.statusCode());
         assertEquals("Reservation expired", JsonPath.read(response.body(), "$.reason"));
+    }
+
+    @Test
+    void answers_404_for_an_order_that_does_not_exist() throws Exception {
+        assertEquals(404, get("/api/orders/" + UUID.randomUUID()).statusCode());
     }
 
     @Test
@@ -126,6 +138,11 @@ class CheckoutHttpIT {
         return post("/api/checkout/" + checkoutId + "/pay", """
                 {"amountInCents": 1200, "currency": "EUR"}
                 """);
+    }
+
+    private HttpResponse<String> get(String path) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).GET().build();
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> post(String path, String json) throws Exception {
