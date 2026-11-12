@@ -87,9 +87,12 @@ class CheckoutHttpIT {
 
         HttpResponse<String> paid = pay(checkoutId);
         assertEquals(200, paid.statusCode());
-        assertNotNull(JsonPath.<String>read(paid.body(), "$.orderId"));
+        String orderId = JsonPath.read(paid.body(), "$.orderId");
+        assertNotNull(orderId);
 
         assertEquals(409, pay(checkoutId).statusCode());
+        assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM outbox_events WHERE type = 'OrderPlaced' AND message_key = ?",
+                Integer.class, orderId), "One order, one OrderPlaced event");
     }
 
     @Test

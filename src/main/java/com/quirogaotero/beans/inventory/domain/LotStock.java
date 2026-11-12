@@ -56,6 +56,17 @@ public class LotStock {
     return StockMovement.of(this.id, StockMovementType.RELEASE, qty);
   }
 
+  // The reserved units leave the building: they stop being both on hand and reserved.
+  public StockMovement pick(Quantity qty) {
+    if (qty.isGreaterThan(this.reserved))
+      throw new IllegalStateException("Cannot pick " + qty.value() + " from " + this.id
+              + ": only " + this.reserved.value() + " reserved.");
+
+    this.reserved = this.reserved.minus(qty);
+    this.onHand = this.onHand.minus(qty);
+    return StockMovement.of(this.id, StockMovementType.PICK, qty);
+  }
+
   public LotStockId getId() { return this.id; }
   public Quantity getOnHand() { return this.onHand; }
   public Quantity getReserved() { return this.reserved; }

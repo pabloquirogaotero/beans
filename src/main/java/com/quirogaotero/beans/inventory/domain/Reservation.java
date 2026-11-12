@@ -44,6 +44,13 @@ public class Reservation {
     this.status = ReservationStatus.RELEASED;
   }
 
+  public void pick() {
+    if (this.status != ReservationStatus.CONFIRMED)
+      throw new IllegalStateException("Reservation " + this.id + " is not confirmed.");
+
+    this.status = ReservationStatus.PICKED;
+  }
+
   public boolean isExpired(Instant now) { return now.isAfter(this.expiresAt); }
 
   public ReservationId getId() { return this.id; }

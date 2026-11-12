@@ -17,6 +17,7 @@ class PayCheckoutServiceTest {
     private final Clock clock = Clock.fixed(Instant.parse("2026-07-01T10:00:00Z"), ZoneOffset.UTC);
     private final InMemoryCheckoutRepository checkouts = new InMemoryCheckoutRepository();
     private final InMemoryOrderRepository orders = new InMemoryOrderRepository();
+    private final InMemoryOrderOutbox outbox = new InMemoryOrderOutbox();
 
     private final List<OrderLine> lines = List.of(new OrderLine("COF-COLHU-WBN-250", 2));
 
@@ -35,7 +36,7 @@ class PayCheckoutServiceTest {
     }
 
     private PayCheckoutService service(ConfirmReservationsUseCase confirm, PaymentPort payment) {
-        return new PayCheckoutService(checkouts, orders, confirm, payment, clock);
+        return new PayCheckoutService(checkouts, orders, outbox, confirm, payment, clock);
     }
 
     private Checkout seededStartedCheckout() {
@@ -58,6 +59,33 @@ class PayCheckoutServiceTest {
         // the checkout is now PAID
         assertEquals(CheckoutStatus.PAID,
                 checkouts.findById(checkout.getId()).orElseThrow().getStatus());
+    }
+
+    @Test
+    void records_one_order_placed_event_for_the_new_order() {
+        Checkout checkout = seededStartedCheckout();
+
+        PayCheckoutResult result = service(confirmThatSucceeds(), paymentApproves())
+                .pay(checkout.getId(), Money.euros(2400));
+
+        assertEquals(1, outbox.events.size());
+        OrderPlaced event = outbox.events.getFirst();
+        assertEquals(result.orderId(), event.orderId());
+        assertEquals(checkout.getId(), event.checkoutId());
+        assertEquals(lines, event.lines());
+    }
+
+    @Test
+    void records_no_event_when_no_order_is_created() {
+        Checkout expired = seededStartedCheckout();
+        service(confirmThatFails(), paymentApproves()).pay(expired.getId(), Money.euros(2400));
+
+        Checkout declined = seededStartedCheckout();
+        assertThrows(PaymentDeclinedException.class,
+                () -> service(confirmThatSucceeds(), paymentDeclines())
+                        .pay(declined.getId(), Money.euros(2400)));
+
+        assertTrue(outbox.events.isEmpty());
     }
 
     @Test

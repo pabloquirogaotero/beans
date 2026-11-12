@@ -12,6 +12,21 @@ spring:
       show-sql: true
     flyway:
       enabled: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    admin:
+      # Creating the topic must not hold up startup for long when the broker is down.
+      operation-timeout: 5s
+      properties:
+        request.timeout.ms: 3000
+        default.api.timeout.ms: 3000
+    producer:
+      properties:
+        # Fail fast when the broker is unreachable instead of blocking for the default 60s.
+        max.block.ms: 5000
+    consumer:
+      # A consumer group joining for the first time must still see events published before it.
+      auto-offset-reset: earliest
 management:
   endpoints:
     web:
@@ -24,3 +39,10 @@ beans:
   checkout:
     hold-duration: PT15M
     min-shelf-life-days: 30
+  messaging:
+    topics:
+      order-events: ordering.order-events
+      stock-events: inventory.stock-events
+    outbox:
+      relay-interval: PT2S
+      batch-size: 50
