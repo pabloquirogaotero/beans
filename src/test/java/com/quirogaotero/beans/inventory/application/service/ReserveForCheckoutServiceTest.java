@@ -5,6 +5,7 @@ import com.quirogaotero.beans.inventory.application.port.in.ReserveForCheckoutCo
 import com.quirogaotero.beans.inventory.application.port.out.FakeCandidateFinder;
 import com.quirogaotero.beans.inventory.application.port.out.InMemoryLotStockRepository;
 import com.quirogaotero.beans.inventory.application.port.out.InMemoryReservationRepository;
+import com.quirogaotero.beans.inventory.application.port.out.InMemoryStockLedger;
 import com.quirogaotero.beans.inventory.domain.*;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +22,7 @@ public class ReserveForCheckoutServiceTest {
 
   private final InMemoryLotStockRepository lotStocks = new InMemoryLotStockRepository();
   private final InMemoryReservationRepository reservations = new InMemoryReservationRepository();
+  private final InMemoryStockLedger ledger = new InMemoryStockLedger();
   private final ConsolidatedAllocationStrategy allocationStrategy = new ConsolidatedAllocationStrategy();
 
   private Candidate candidate(int available, String bestBefore, LocationType locationType) {
@@ -41,7 +43,7 @@ public class ReserveForCheckoutServiceTest {
     Candidate candidate = candidate(5, "2027-01-01", LocationType.WAREHOUSE);
 
     ReservationResult result = new ReserveForCheckoutService(new FakeCandidateFinder(List.of(candidate)), lotStocks,
-            reservations, allocationStrategy, clock, Duration.ofMinutes(15), 30)
+            reservations, ledger, allocationStrategy, clock, Duration.ofMinutes(15), 30)
             .reserveForCheckout(order(2));
 
     assertTrue(result.reserved());
@@ -54,11 +56,29 @@ public class ReserveForCheckoutServiceTest {
   }
 
   @Test
+  void recordsTheReservationInTheLedger() {
+    Candidate candidate = candidate(5, "2027-01-01", LocationType.WAREHOUSE);
+    ReserveForCheckoutCommand command = order(2);
+
+    new ReserveForCheckoutService(new FakeCandidateFinder(List.of(candidate)), lotStocks,
+            reservations, ledger, allocationStrategy, clock, Duration.ofMinutes(15), 30)
+            .reserveForCheckout(command);
+
+    assertEquals(1, ledger.entries.size());
+    StockLedgerEntry entry = ledger.entries.getFirst();
+    assertEquals(StockMovementType.RESERVE, entry.type());
+    assertEquals(Quantity.of(2), entry.quantity());
+    assertEquals(new LotStockId(new LocationId("WRH-OUR-01"), candidate.lot().getId()), entry.lotStockId());
+    assertEquals(command.checkoutId(), entry.checkoutId());
+    assertEquals(clock.instant(), entry.occurredAt());
+  }
+
+  @Test
   void returnsSoldOutWhenStockIsInsufficient() {
     Candidate candidate = candidate(1, "2027-01-01", LocationType.WAREHOUSE);
 
     ReservationResult result = new ReserveForCheckoutService(new FakeCandidateFinder(List.of(candidate)), lotStocks,
-            reservations, allocationStrategy, clock, Duration.ofMinutes(15), 30)
+            reservations, ledger, allocationStrategy, clock, Duration.ofMinutes(15), 30)
             .reserveForCheckout(order(5));
 
     assertFalse(result.reserved());
@@ -70,7 +90,7 @@ public class ReserveForCheckoutServiceTest {
     Candidate candidate = candidate(5, "2026-01-02", LocationType.WAREHOUSE);
 
     ReservationResult result = new ReserveForCheckoutService(new FakeCandidateFinder(List.of(candidate)), lotStocks,
-            reservations, allocationStrategy, clock, Duration.ofMinutes(15), 30)
+            reservations, ledger, allocationStrategy, clock, Duration.ofMinutes(15), 30)
             .reserveForCheckout(order(2));
 
     assertFalse(result.reserved());
@@ -82,7 +102,7 @@ public class ReserveForCheckoutServiceTest {
     Candidate candidate = candidate(5, "2026-01-02", LocationType.STORE);
 
     ReservationResult result = new ReserveForCheckoutService(new FakeCandidateFinder(List.of(candidate)), lotStocks,
-            reservations, allocationStrategy, clock, Duration.ofMinutes(15), 30)
+            reservations, ledger, allocationStrategy, clock, Duration.ofMinutes(15), 30)
             .reserveForCheckout(order(2));
 
     assertFalse(result.reserved());

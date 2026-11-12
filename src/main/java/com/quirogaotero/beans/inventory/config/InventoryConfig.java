@@ -39,10 +39,10 @@ public class InventoryConfig {
   @Bean
   ReserveForCheckoutService reserveForCheckoutCore(
           CandidateFinder candidateFinder, LotStockRepository lotStocks,
-          ReservationRepository reservations, AllocationStrategy allocationStrategy, Clock clock,
+          ReservationRepository reservations, StockLedger ledger, AllocationStrategy allocationStrategy, Clock clock,
           @Value("${beans.checkout.hold-duration:PT15M}") Duration holdDuration,
           @Value("${beans.checkout.min-shelf-life-days:30}") int minShelfLifeDays) {
-    return new ReserveForCheckoutService(candidateFinder, lotStocks, reservations,
+    return new ReserveForCheckoutService(candidateFinder, lotStocks, reservations, ledger,
             allocationStrategy, clock, holdDuration, minShelfLifeDays);
   }
 
