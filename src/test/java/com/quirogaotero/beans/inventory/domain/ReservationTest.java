@@ -58,4 +58,29 @@ public class ReservationTest {
     assertThrows(IllegalStateException.class, reservation::release);
   }
 
+  @Test
+  void pickingAConfirmedReservationMovesToPicked() {
+    Reservation reservation = Reservation.newActiveReservation(CheckoutId.newCheckoutId(), lotStockId,
+            Quantity.of(2), now.plusSeconds(900));
+    reservation.confirm(now);
+    reservation.pick();
+    assertEquals(ReservationStatus.PICKED, reservation.getStatus());
+  }
+
+  @Test
+  void cannotPickAReservationThatIsNotConfirmed() {
+    Reservation reservation = Reservation.newActiveReservation(CheckoutId.newCheckoutId(), lotStockId,
+            Quantity.of(2), now.plusSeconds(900));
+    assertThrows(IllegalStateException.class, reservation::pick);
+  }
+
+  @Test
+  void cannotPickTheSameReservationTwice() {
+    Reservation reservation = Reservation.newActiveReservation(CheckoutId.newCheckoutId(), lotStockId,
+            Quantity.of(2), now.plusSeconds(900));
+    reservation.confirm(now);
+    reservation.pick();
+    assertThrows(IllegalStateException.class, reservation::pick);
+  }
+
 }

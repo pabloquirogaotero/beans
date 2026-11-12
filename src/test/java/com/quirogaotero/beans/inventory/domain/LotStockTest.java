@@ -61,6 +61,26 @@ public class LotStockTest {
   }
 
   @Test
+  void pickingTakesReservedStockOutOfOnHand() {
+    LotStock stock = new LotStock(new LotStockId(new LocationId("WRH-OUR-O1"), LotId.newLotId()),
+            Quantity.of(10), Quantity.of(4));
+    StockMovement movement = stock.pick(Quantity.of(3));
+    assertEquals(7, stock.getOnHand().value());
+    assertEquals(1, stock.getReserved().value());
+    assertEquals(6, stock.getAvailable().value());
+    assertEquals(StockMovementType.PICK, movement.type());
+  }
+
+  @Test
+  void pickingMoreThanReservedThrowsAndChangesNothing() {
+    LotStock stock = new LotStock(new LotStockId(new LocationId("WRH-OUR-O1"), LotId.newLotId()),
+            Quantity.of(10), Quantity.of(2));
+    assertThrows(IllegalStateException.class, () -> stock.pick(Quantity.of(3)));
+    assertEquals(10, stock.getOnHand().value());
+    assertEquals(2, stock.getReserved().value());
+  }
+
+  @Test
   void constructingWithReservedGreaterThanOnHandViolatesInvariant() {
     assertThrows(IllegalStateException.class,
             () -> new LotStock(new LotStockId(new LocationId("WRH-OUR-O1"), LotId.newLotId()),
