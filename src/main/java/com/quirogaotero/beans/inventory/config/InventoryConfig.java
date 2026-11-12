@@ -65,8 +65,9 @@ public class InventoryConfig {
 
   @Bean
   PickForOrderUseCase pickForOrderUseCase(ReservationRepository reservations, LotStockRepository lotStocks,
-                                          ProcessedEvents processedEvents, InventoryOutbox outbox, Clock clock) {
-    return new PickForOrderService(reservations, lotStocks, processedEvents, outbox, clock);
+                                          StockLedger ledger, ProcessedEvents processedEvents,
+                                          InventoryOutbox outbox, Clock clock) {
+    return new PickForOrderService(reservations, lotStocks, ledger, processedEvents, outbox, clock);
   }
 
   @Bean

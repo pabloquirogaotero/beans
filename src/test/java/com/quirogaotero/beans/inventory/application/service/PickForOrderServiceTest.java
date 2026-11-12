@@ -4,6 +4,7 @@ import com.quirogaotero.beans.inventory.application.port.in.PickForOrderCommand;
 import com.quirogaotero.beans.inventory.application.port.out.InMemoryInventoryOutbox;
 import com.quirogaotero.beans.inventory.application.port.out.InMemoryLotStockRepository;
 import com.quirogaotero.beans.inventory.application.port.out.InMemoryReservationRepository;
+import com.quirogaotero.beans.inventory.application.port.out.InMemoryStockLedger;
 import com.quirogaotero.beans.inventory.domain.*;
 import com.quirogaotero.beans.messaging.application.port.out.InMemoryProcessedEvents;
 import org.junit.jupiter.api.Test;
@@ -19,8 +20,9 @@ class PickForOrderServiceTest {
     private final InMemoryReservationRepository reservations = new InMemoryReservationRepository();
     private final InMemoryLotStockRepository lotStocks = new InMemoryLotStockRepository();
     private final InMemoryInventoryOutbox outbox = new InMemoryInventoryOutbox();
+    private final InMemoryStockLedger ledger = new InMemoryStockLedger();
     private final PickForOrderService service = new PickForOrderService(
-            reservations, lotStocks, new InMemoryProcessedEvents(), outbox, clock);
+            reservations, lotStocks, ledger, new InMemoryProcessedEvents(), outbox, clock);
 
     private final CheckoutId checkout = CheckoutId.newCheckoutId();
     private final UUID orderId = UUID.randomUUID();
@@ -71,6 +73,21 @@ class PickForOrderServiceTest {
     }
 
     @Test
+    void records_each_pick_in_the_ledger_against_the_order() {
+        LotStockId lot = lotWithReservation(3, true);
+
+        service.pickForOrder(command(UUID.randomUUID()));
+
+        assertEquals(1, ledger.entries.size());
+        StockLedgerEntry entry = ledger.entries.getFirst();
+        assertEquals(StockMovementType.PICK, entry.type());
+        assertEquals(lot, entry.lotStockId());
+        assertEquals(Quantity.of(3), entry.quantity());
+        assertEquals(orderId, entry.orderId());
+        assertEquals(checkout, entry.checkoutId());
+    }
+
+    @Test
     void a_repeated_event_does_not_pick_the_stock_twice() {
         LotStockId lot = lotWithReservation(3, true);
         UUID eventId = UUID.randomUUID();
@@ -80,6 +97,7 @@ class PickForOrderServiceTest {
 
         assertEquals(7, lotStocks.find(lot).orElseThrow().getOnHand().value());
         assertEquals(1, outbox.events.size());
+        assertEquals(1, ledger.entries.size());
     }
 
     @Test
