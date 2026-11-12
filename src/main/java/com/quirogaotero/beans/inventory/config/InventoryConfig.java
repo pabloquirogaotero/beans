@@ -54,8 +54,8 @@ public class InventoryConfig {
 
   @Bean
   ExpireReservationsUseCase expireReservationsUseCase(
-          ReservationRepository reservations, LotStockRepository lotStocks, Clock clock) {
-    return new ExpireReservationsService(reservations, lotStocks, clock);
+          ReservationRepository reservations, LotStockRepository lotStocks, StockLedger ledger, Clock clock) {
+    return new ExpireReservationsService(reservations, lotStocks, ledger, clock);
   }
 
   @Bean
