@@ -26,11 +26,12 @@ class CheckoutOrderPersistenceIT {
 
     @Test
     void checkout_round_trips_with_its_lines() {
-        var checkout = Checkout.start(List.of(new OrderLine("COF-COLHU-WBN-250", 2)), Instant.now());
+        var checkout = Checkout.start(List.of(new OrderLine("COF-COLHU-WBN-250", 2)), Money.euros(2500), Instant.now());
         checkouts.save(checkout);
 
         var loaded = checkouts.findById(checkout.getId()).orElseThrow();
         assertEquals(CheckoutStatus.STARTED, loaded.getStatus());
+        assertEquals(Money.euros(2500), loaded.getTotal());
         assertEquals(1, loaded.getLines().size());
         assertEquals("COF-COLHU-WBN-250", loaded.getLines().getFirst().sku());
     }

@@ -3,7 +3,9 @@ package com.quirogaotero.beans.ordering.application;
 import com.quirogaotero.beans.inventory.application.port.in.*;
 import com.quirogaotero.beans.inventory.domain.*;
 import com.quirogaotero.beans.ordering.application.port.out.CheckoutRepository;
+import com.quirogaotero.beans.ordering.application.port.out.PriceList;
 import com.quirogaotero.beans.ordering.domain.Checkout;
+import com.quirogaotero.beans.ordering.domain.Money;
 import com.quirogaotero.beans.ordering.domain.OrderLine;
 import org.springframework.stereotype.Service;
 
@@ -15,12 +17,14 @@ public class StartCheckoutService {
 
     private final ReserveForCheckoutUseCase reserveForCheckout;
     private final CheckoutRepository checkouts;
+    private final PriceList priceList;
     private final Clock clock;
 
     public StartCheckoutService(ReserveForCheckoutUseCase reserveForCheckout,
-                                CheckoutRepository checkouts, Clock clock) {
+                                CheckoutRepository checkouts, PriceList priceList, Clock clock) {
         this.reserveForCheckout = reserveForCheckout;
         this.checkouts = checkouts;
+        this.priceList = priceList;
         this.clock = clock;
     }
 
@@ -28,11 +32,12 @@ public class StartCheckoutService {
     // the optimistic-lock failure surfaces inside the retry wrapper; an outer transaction here
     // would defer the version check to its own commit, after the retries have already returned.
     public CheckoutOutcome startCheckout(StartCheckoutCommand command) {
-        // 1. Ordering owns what the customer chose — create the Checkout (not persisted yet).
+        // 1. Ordering owns what the customer chose — price it and create the Checkout (not persisted yet).
+        //    Pricing comes first: an unknown product is refused before any stock is touched.
         List<OrderLine> lines = command.lines().stream()
                 .map(l -> new OrderLine(l.sku(), l.quantity()))
                 .toList();
-        Checkout checkout = Checkout.start(lines, clock.instant());
+        Checkout checkout = Checkout.start(lines, totalOf(lines), clock.instant());
 
         // 2. Reserve stock in Inventory, using this checkout's id.
         List<RequestedLine> reserveLines = command.lines().stream()
@@ -48,6 +53,15 @@ public class StartCheckoutService {
         if (result.reserved())
             checkouts.save(checkout);
 
-        return new CheckoutOutcome(checkout.getId(), result);
+        return new CheckoutOutcome(checkout.getId(), checkout.getTotal(), result);
+    }
+
+    private Money totalOf(List<OrderLine> lines) {
+        return lines.stream()
+                .map(l -> priceList.unitPriceOf(l.sku())
+                        .orElseThrow(() -> new UnknownProductException(l.sku()))
+                        .times(l.quantity()))
+                .reduce(Money::plus)
+                .orElseThrow();
     }
 }

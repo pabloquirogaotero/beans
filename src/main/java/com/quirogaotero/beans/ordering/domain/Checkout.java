@@ -10,11 +10,13 @@ public class Checkout {
 
     private final CheckoutId id;
     private final List<OrderLine> lines;
+    private final Money total;
     private CheckoutStatus status;
     private final Instant startedAt;
 
-    public Checkout(CheckoutId id, List<OrderLine> lines, CheckoutStatus status, Instant startedAt) {
+    public Checkout(CheckoutId id, List<OrderLine> lines, Money total, CheckoutStatus status, Instant startedAt) {
         this.id = Objects.requireNonNull(id, "id");
+        this.total = Objects.requireNonNull(total, "total");
         this.status = Objects.requireNonNull(status, "status");
         this.startedAt = Objects.requireNonNull(startedAt, "startedAt");
         Objects.requireNonNull(lines, "lines");
@@ -23,8 +25,12 @@ public class Checkout {
         this.lines = List.copyOf(lines);
     }
 
-    public static Checkout start(List<OrderLine> lines, Instant startedAt) {
-        return new Checkout(CheckoutId.newCheckoutId(), lines, CheckoutStatus.STARTED, startedAt);
+    /**
+     * The total is fixed here, at the prices of the moment the customer starts paying: a price
+     * change during the hold must not change what they are charged.
+     */
+    public static Checkout start(List<OrderLine> lines, Money total, Instant startedAt) {
+        return new Checkout(CheckoutId.newCheckoutId(), lines, total, CheckoutStatus.STARTED, startedAt);
     }
 
     public void markPaid() {
@@ -41,6 +47,7 @@ public class Checkout {
 
     public CheckoutId getId()          { return id; }
     public List<OrderLine> getLines()  { return lines; }
+    public Money getTotal()            { return total; }
     public CheckoutStatus getStatus()  { return status; }
     public Instant getStartedAt()      { return startedAt; }
 

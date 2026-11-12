@@ -4,6 +4,7 @@ import com.quirogaotero.beans.ordering.application.CheckoutNotFoundException;
 import com.quirogaotero.beans.ordering.application.CheckoutNotPayableException;
 import com.quirogaotero.beans.ordering.application.OrderNotFoundException;
 import com.quirogaotero.beans.ordering.application.PaymentDeclinedException;
+import com.quirogaotero.beans.ordering.application.UnknownProductException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,6 +21,11 @@ public class OrderingExceptionHandler {
     @ExceptionHandler(OrderNotFoundException.class)
     ProblemDetail handleOrderNotFound(OrderNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnknownProductException.class)
+    ProblemDetail handleUnknownProduct(UnknownProductException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage());
     }
 
     @ExceptionHandler(PaymentDeclinedException.class)

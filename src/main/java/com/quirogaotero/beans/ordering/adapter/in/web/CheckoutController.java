@@ -32,13 +32,15 @@ public class CheckoutController {
 
     if (!outcome.result().reserved()) {
       return ResponseEntity.status(HttpStatus.CONFLICT)
-              .body(new CheckoutResponse(null, List.of(), null, outcome.result().reason()));
+              .body(new CheckoutResponse(null, List.of(), null, null, null, outcome.result().reason()));
     }
 
     var response = new CheckoutResponse(
             outcome.checkoutId().value().toString(),
             outcome.result().reservationIds().stream().map(id -> id.value().toString()).toList(),
             outcome.result().expiresAt(),
+            outcome.total().amountInCents(),
+            outcome.total().currency(),
             null);
     return ResponseEntity.ok(response);
   }

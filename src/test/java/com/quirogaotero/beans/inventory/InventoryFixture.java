@@ -21,8 +21,12 @@ public class InventoryFixture {
     this.jdbc = jdbc;
   }
 
+  /** A new SKU, listed in the catalog at 10.00 EUR so it can be checked out. */
   public SkuId newSku() {
-    return new SkuId("TST-" + random(12));
+    SkuId sku = new SkuId("TST-" + random(12));
+    jdbc.update("INSERT INTO products (sku, name, price_in_cents, currency) VALUES (?, ?, 1000, 'EUR')",
+            sku.value(), "Test product " + sku.value());
+    return sku;
   }
 
   public LocationId newWarehouse(double latitude, double longitude) {

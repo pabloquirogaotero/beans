@@ -40,7 +40,7 @@ class PayCheckoutServiceTest {
     }
 
     private Checkout seededStartedCheckout() {
-        Checkout checkout = Checkout.start(lines, clock.instant());
+        Checkout checkout = Checkout.start(lines, Money.euros(2500), clock.instant());
         checkouts.save(checkout);
         return checkout;
     }
